@@ -74,7 +74,12 @@ end
 local function isWhitespace(character)
   if character:len() ~= 1 then
     return false
-  elseif character == " " or character == "\t" or character == "\n" or character == "\r" or c == "\f" then
+  elseif character == " " or
+         character == "\t" or
+         character == "\v" or
+         character == "\n" or
+         character == "\r" or
+         character == "\f" then
     return true
   else
     return false
@@ -181,7 +186,18 @@ function lexit.lex(program)
   end
   
   -- **** State-Handler Functions
-  -- This is the heart of the lexer.
+  local function handle_DONE()
+    io.write("ERROR: 'DONE' state should not be handled.\n")
+    assert(0)
+  end
+  
+
+    -- **** Table of State-Handler Functions
+
+    handlers = {
+        [DONE]=handle_DONE,
+        [START]=handle_START,
+    }
   
   -- **** Iterator Function
   -- getLexeme
