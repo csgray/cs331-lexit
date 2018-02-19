@@ -168,19 +168,27 @@ function lexit.lex(program)
   -- Skip whitespace and comments by moving position to the beginning of the next lexeme or to program:len()+1.
   local function skipWhitespace()
     while true do
+      -- Advance position if whitespace
       while isWhitespace(currentCharacter()) do
         drop1()
       end
       
+      -- Exit if not comment
       if currentCharacter() ~= "#" then
-        while true do
-          if currentCharacter() == "\n" then
-            break
-          elseif currentCharacter() == "" then
-            return
-          end
-          drop1()
+        break
+      end
+      
+      -- Drop comment character
+      drop1()
+      
+      -- Advance to end of line or program
+      while true do
+        if currentCharacter() == "\n" then
+          break
+        elseif currentCharacter() == "" then
+          return
         end
+        drop1()
       end
     end
   end
@@ -191,12 +199,52 @@ function lexit.lex(program)
     assert(0)
   end
   
+local function handle_START()
+  if isIllegal(character) then
+    add1()
+    state = DONE
+    category = lexit.MAL
+  elseif isLetter(character) or character == "_" then
+    add1()
+    state = LETTER
+  else
+    add1()
+    state = DONE
+    category = lexit.PUNCT
+  end
+end
+
+local function handle_LETTER()
+  if isLetter(character) or character == "_" then
+    add1()
+  else
+    state = DONE
+    if lexeme == "call" or
+       lexeme == "cr" or
+       lexeme == "else" or
+       lexeme == "elseif" or
+       lexeme == "end" or
+       lexeme == "false" or
+       lexeme == "func" or
+       lexeme == "if" or
+       lexeme == "input" or
+       lexeme == "print" or 
+       lexeme == "true" or
+       lexeme == "while" then
+         category = lexit.KEY
+    else
+      category = lexit.ID
+    end
+  end
+end
+       
 
     -- **** Table of State-Handler Functions
 
     handlers = {
         [DONE]=handle_DONE,
         [START]=handle_START,
+        [LETTER]=handle_LETTER,
     }
   
   -- **** Iterator Function
