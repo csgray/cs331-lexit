@@ -129,7 +129,7 @@ function lexit.lex(program)
   local START = 1
   local LETTER = 2
   local DIGIT = 3
-  local DIGDOT = 4
+  local EXPONENT = 4
   local PLUS = 5
   local MINUS = 6
   local STAR = 7
@@ -215,7 +215,7 @@ local function handle_START()
 end
 
 local function handle_LETTER()
-  if isLetter(character) or character == "_" then
+  if isLetter(character) or isDigit(character) or character == "_" then
     add1()
   else
     state = DONE
@@ -238,6 +238,17 @@ local function handle_LETTER()
   end
 end
        
+local function handle_DIGIT()
+  if isDigit() then
+    add1()
+  elseif character == "e" or character == "E" then
+    add1()
+    state = EXPONENT
+  else
+    state = DONE
+    category = lexit.NUMLIT
+  end
+end
 
     -- **** Table of State-Handler Functions
 
@@ -245,6 +256,8 @@ end
         [DONE]=handle_DONE,
         [START]=handle_START,
         [LETTER]=handle_LETTER,
+        [DIGIT]=handle_DIGIT,
+        [EXPONENT]=handle_EXPONENT
     }
   
   -- **** Iterator Function
