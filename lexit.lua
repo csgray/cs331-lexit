@@ -134,6 +134,9 @@ function lexit.lex(program)
   local PLUS = 5
   local MINUS = 6
   local STRING = 7
+  local COMPARISON = 8
+  local AMPERSAND = 9
+  local PIPE = 10
   
   -- **** Character-Related Utility Functions
   
@@ -227,6 +230,27 @@ local function handle_START()
     stringQuote = character
     add1()
     state = STRING
+  elseif character == "=" or
+         character == "!" or
+         character == "<" or
+         character == ">" then
+    add1()
+    state = COMPARISON
+  elseif character == "&" then
+    add1()
+    state = AMPERSAND
+  elseif character == "|" then
+    add1()
+    state = PIPE
+  elseif character == "*" or
+         character == "/" or
+         character == "%" or
+         character == "[" or
+         character == "]" or
+         character == ";" then
+    add1()
+    state = DONE
+    category = lexit.OP
   else
     add1()
     state = DONE
@@ -295,7 +319,6 @@ local function handle_EXPONENT()
   end
 end
     
-
 local function handle_PLUS()
   if isDigit(character) and preferOpFlag == false then
     add1()
@@ -330,8 +353,37 @@ local function handle_STRING()
     category = lexit.MAL
   end
 end
-    
+   
+-- Handles =, !, <, and >
+local function handle_COMPARISON()
+  if character == "=" then
+    add1()
+  end
+  state = DONE
+  category = lexit.OP
+end
+
+local function handle_AMPERSAND()
+  if character == "&" then
+    add1()
+    state = DONE
+    category = lexit.OP 
+  else
+    state = DONE
+    category = lexit.PUNCT
+  end
+end
   
+  local function handle_PIPE()
+  if character == "|" then
+    add1()
+    state = DONE
+    category = lexit.OP 
+  else
+    state = DONE
+    category = lexit.PUNCT
+  end
+end
 
     -- **** Table of State-Handler Functions
 
@@ -343,7 +395,10 @@ end
         [EXPONENT]=handle_EXPONENT,
         [PLUS]=handle_PLUS,
         [MINUS]=handle_MINUS,
-        [STRING]=handle_STRING
+        [STRING]=handle_STRING,
+        [COMPARISON]=handle_COMPARISON,
+        [AMPERSAND]=handle_AMPERSAND,
+        [PIPE]=handle_PIPE
     }
   
   -- **** Iterator Function
