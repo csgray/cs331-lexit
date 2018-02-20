@@ -123,6 +123,7 @@ function lexit.lex(program)
   local lexeme
   local category
   local handlers
+  local stringQuote -- the sort of quote used to start the string
   
   -- **** States
   local DONE = 0
@@ -132,8 +133,7 @@ function lexit.lex(program)
   local EXPONENT = 4
   local PLUS = 5
   local MINUS = 6
-  local STAR = 7
-  local DOT = 8
+  local STRING = 7
   
   -- **** Character-Related Utility Functions
   
@@ -223,6 +223,10 @@ local function handle_START()
   elseif character == "-" then
     add1()
     state = MINUS
+  elseif character == "'" or character == '"' then
+    stringQuote = character
+    add1()
+    state = STRING
   else
     add1()
     state = DONE
@@ -312,6 +316,23 @@ local function handle_MINUS()
   end
 end
 
+local function handle_STRING()
+  if character == stringQuote then
+    add1()
+    state = DONE
+    category = lexit.STRLIT
+  elseif character ~= "\n" and character ~= "" then
+    add1()
+    state = STRING
+  else
+    add1()
+    state = DONE
+    category = lexit.MAL
+  end
+end
+    
+  
+
     -- **** Table of State-Handler Functions
 
     handlers = {
@@ -321,7 +342,8 @@ end
         [DIGIT]=handle_DIGIT,
         [EXPONENT]=handle_EXPONENT,
         [PLUS]=handle_PLUS,
-        [MINUS]=handle_MINUS
+        [MINUS]=handle_MINUS,
+        [STRING]=handle_STRING
     }
   
   -- **** Iterator Function
