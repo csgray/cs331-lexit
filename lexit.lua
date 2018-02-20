@@ -207,6 +207,9 @@ local function handle_START()
   elseif isLetter(character) or character == "_" then
     add1()
     state = LETTER
+  elseif isDigit(character) then
+    add1()
+    state = DIGIT
   else
     add1()
     state = DONE
@@ -239,7 +242,7 @@ local function handle_LETTER()
 end
        
 local function handle_DIGIT()
-  if isDigit() then
+  if isDigit(character) then
     add1()
   elseif character == "e" or character == "E" then
     add1()
