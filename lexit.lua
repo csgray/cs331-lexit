@@ -151,6 +151,13 @@ function lexit.lex(program)
     return program:sub(position+1, position+1)
   end
   
+  -- nextNextCharacter
+  -- Return the next character at index position+2 in program.
+  -- Return value is a single-character string or the empty string if position is past the end.
+  local function nextNextCharacter()
+    return program:sub(position+2, position+2)
+  end
+  
   -- drop1
   -- Move position to the next character.
   local function drop1()
@@ -213,6 +220,9 @@ local function handle_START()
   elseif character == "+" then
     add1()
     state = PLUS
+  elseif character == "-" then
+    add1()
+    state = MINUS
   else
     add1()
     state = DONE
@@ -248,6 +258,31 @@ local function handle_DIGIT()
   if isDigit(character) then
     add1()
   elseif character == "e" or character == "E" then
+    if isDigit(nextCharacter()) then
+      add1()
+      add1()
+      state = EXPONENT
+    elseif nextCharacter() == "+" then
+      if isDigit(nextNextCharacter()) then
+        add1()
+        add1()
+        state = EXPONENT
+      else
+        state = DONE
+        category = lexit.NUMLIT
+      end
+    else
+      state = DONE
+      category = lexit.NUMLIT
+    end
+  else
+    state = DONE
+    category = lexit.NUMLIT
+  end
+end
+
+local function handle_EXPONENT()
+  if isDigit(character) then
     add1()
     state = EXPONENT
   else
@@ -255,9 +290,20 @@ local function handle_DIGIT()
     category = lexit.NUMLIT
   end
 end
+    
 
 local function handle_PLUS()
-  if isDigit(character) then
+  if isDigit(character) and preferOpFlag == false then
+    add1()
+    state = DIGIT
+  else
+    state = DONE
+    category = lexit.OP
+  end
+end
+
+local function handle_MINUS()
+  if isDigit(character) and preferOpFlag == false then
     add1()
     state = DIGIT
   else
@@ -274,7 +320,8 @@ end
         [LETTER]=handle_LETTER,
         [DIGIT]=handle_DIGIT,
         [EXPONENT]=handle_EXPONENT,
-        [PLUS]=handle_PLUS
+        [PLUS]=handle_PLUS,
+        [MINUS]=handle_MINUS
     }
   
   -- **** Iterator Function
