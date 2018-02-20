@@ -210,6 +210,9 @@ local function handle_START()
   elseif isDigit(character) then
     add1()
     state = DIGIT
+  elseif character == "+" then
+    add1()
+    state = PLUS
   else
     add1()
     state = DONE
@@ -253,6 +256,16 @@ local function handle_DIGIT()
   end
 end
 
+local function handle_PLUS()
+  if isDigit(character) then
+    add1()
+    state = DIGIT
+  else
+    state = DONE
+    category = lexit.OP
+  end
+end
+
     -- **** Table of State-Handler Functions
 
     handlers = {
@@ -260,7 +273,8 @@ end
         [START]=handle_START,
         [LETTER]=handle_LETTER,
         [DIGIT]=handle_DIGIT,
-        [EXPONENT]=handle_EXPONENT
+        [EXPONENT]=handle_EXPONENT,
+        [PLUS]=handle_PLUS
     }
   
   -- **** Iterator Function
