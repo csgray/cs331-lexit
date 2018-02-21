@@ -1,14 +1,14 @@
 -- lexit.lua
 -- Corey Gray
--- 18 February 2018
--- Source for lexit module for CS 331: Assignment 3B
+-- 20 February 2018
+-- Source for lexit module for CS 331: Assignment 3B which is a lexer
 -- Heavily based on "lexer.lua" by Glenn G. Chappell
 
 local lexit = {}
 
--- ***
--- Public Constant
--- ***
+-- ****
+-- Public Constants
+-- ****
 
 -- Numeric constants representing lexeme categories
 lexit.KEY = 1
@@ -44,7 +44,7 @@ local preferOpFlag = false;
 -- ****
 
 -- isLetter
--- Returns true if string is a letter character, false otherwise.
+-- Returns true if string character is a letter character, false otherwise.
 local function isLetter(character)
   if character:len() ~= 1 then
     return false
@@ -58,7 +58,7 @@ local function isLetter(character)
 end
 
 -- isDigit
--- Returns true if string character is a digit character, else otherwise.
+-- Returns true if string character is a digit character, false otherwise.
 local function isDigit(character)
   if character:len() ~= 1 then
     return false
@@ -74,12 +74,12 @@ end
 local function isWhitespace(character)
   if character:len() ~= 1 then
     return false
-  elseif character == " " or
-         character == "\t" or
-         character == "\v" or
-         character == "\n" or
-         character == "\r" or
-         character == "\f" then
+  elseif character == " " or    -- space
+         character == "\t" or   -- tab
+         character == "\v" or   -- vertical-tab
+         character == "\n" or   -- new-line
+         character == "\r" or   -- carriage-return
+         character == "\f" then -- form-feed
     return true
   else
     return false
@@ -93,16 +93,16 @@ local function isIllegal(character)
     return false
   elseif isWhitespace(character) then
     return false
-  elseif character >= " " and character <= "~" then
+  elseif character >= " " and character <= "~" then -- ASCII 032 through 126
     return false
   else
     return true
   end
 end
 
--- ***
--- The Lexer
--- ***
+-- ****
+-- Exported Lexer Functions
+-- ****
 
 -- preferOp
 -- Takes no parameters and returns nothing.
@@ -116,7 +116,7 @@ end
 -- through lexemes in the passed string
 function lexit.lex(program)
   
-  -- **** Variables
+  -- **** Variables ****
   local position 
   local state
   local character
@@ -125,20 +125,19 @@ function lexit.lex(program)
   local handlers
   local stringQuote -- the sort of quote used to start the string
   
-  -- **** States
+  -- **** States Constants ****
   local DONE = 0
   local START = 1
   local LETTER = 2
   local DIGIT = 3
   local EXPONENT = 4
-  local PLUS = 5
-  local MINUS = 6
-  local STRING = 7
-  local COMPARISON = 8
-  local AMPERSAND = 9
-  local PIPE = 10
+  local PLUSMINUS = 5
+  local STRING = 6
+  local COMPARISON = 7
+  local AMPERSAND = 8
+  local PIPE = 9
   
-  -- **** Character-Related Utility Functions
+  -- **** Character-Related Utility Functions ****
   
   -- currentCharacter
   -- Returns the current character at index position in program.
@@ -155,7 +154,7 @@ function lexit.lex(program)
   end
   
   -- nextNextCharacter
-  -- Return the next character at index position+2 in program.
+  -- Return the character after the next character at index position+2 in program.
   -- Return value is a single-character string or the empty string if position is past the end.
   local function nextNextCharacter()
     return program:sub(position+2, position+2)
@@ -191,7 +190,7 @@ function lexit.lex(program)
       -- Drop comment character
       drop1()
       
-      -- Advance to end of line or program
+      -- Advance to end of line or program which finishes comment
       while true do
         if currentCharacter() == "\n" then
           break
@@ -203,214 +202,227 @@ function lexit.lex(program)
     end
   end
   
-  -- **** State-Handler Functions
+  -- **** State-Handler Functions ****
+  
+  -- handle_DONE
+  -- Detects if the lexer tries to erroneously handle the DONE state.
   local function handle_DONE()
     io.write("ERROR: 'DONE' state should not be handled.\n")
     assert(0)
   end
   
-local function handle_START()
-  if isIllegal(character) then
-    add1()
-    state = DONE
-    category = lexit.MAL
-  elseif isLetter(character) or character == "_" then
-    add1()
-    state = LETTER
-  elseif isDigit(character) then
-    add1()
-    state = DIGIT
-  elseif character == "+" then
-    add1()
-    state = PLUS
-  elseif character == "-" then
-    add1()
-    state = MINUS
-  elseif character == "'" or character == '"' then
-    stringQuote = character
-    add1()
-    state = STRING
-  elseif character == "=" or
-         character == "!" or
-         character == "<" or
-         character == ">" then
-    add1()
-    state = COMPARISON
-  elseif character == "&" then
-    add1()
-    state = AMPERSAND
-  elseif character == "|" then
-    add1()
-    state = PIPE
-  elseif character == "*" or
-         character == "/" or
-         character == "%" or
-         character == "[" or
-         character == "]" or
-         character == ";" then
-    add1()
-    state = DONE
-    category = lexit.OP
-  else
-    add1()
-    state = DONE
-    category = lexit.PUNCT
-  end
-end
-
-local function handle_LETTER()
-  if isLetter(character) or isDigit(character) or character == "_" then
-    add1()
-  else
-    state = DONE
-    if lexeme == "call" or
-       lexeme == "cr" or
-       lexeme == "else" or
-       lexeme == "elseif" or
-       lexeme == "end" or
-       lexeme == "false" or
-       lexeme == "func" or
-       lexeme == "if" or
-       lexeme == "input" or
-       lexeme == "print" or 
-       lexeme == "true" or
-       lexeme == "while" then
-         category = lexit.KEY
+  -- handle_START
+  -- Called at the beginning of each new lexeme.
+  local function handle_START()
+    if isIllegal(character) then
+      add1()
+      state = DONE
+      category = lexit.MAL
+    elseif isLetter(character) or character == "_" then
+      add1()
+      state = LETTER
+    elseif isDigit(character) then
+      add1()
+      state = DIGIT
+    elseif character == "+" or character == "-" then
+      add1()
+      state = PLUSMINUS
+    elseif character == "'" or character == '"' then
+      stringQuote = character
+      add1()
+      state = STRING
+    elseif character == "=" or
+           character == "!" or
+           character == "<" or
+           character == ">" then
+      add1()
+      state = COMPARISON
+    elseif character == "&" then
+      add1()
+      state = AMPERSAND
+    elseif character == "|" then
+      add1()
+      state = PIPE
+    elseif character == "*" or
+           character == "/" or
+           character == "%" or
+           character == "[" or
+           character == "]" or
+           character == ";" then
+      add1()
+      state = DONE
+      category = lexit.OP
     else
-      category = lexit.ID
+      add1()
+      state = DONE
+      category = lexit.PUNCT
     end
   end
-end
+
+  -- handle_LETTER()
+  -- Determines if a lexeme is a keyword or identifier.
+  local function handle_LETTER()
+    if isLetter(character) or isDigit(character) or character == "_" then
+      add1()
+    else
+      state = DONE
+      if lexeme == "call" or
+         lexeme == "cr" or
+         lexeme == "else" or
+         lexeme == "elseif" or
+         lexeme == "end" or
+         lexeme == "false" or
+         lexeme == "func" or
+         lexeme == "if" or
+         lexeme == "input" or
+         lexeme == "print" or 
+         lexeme == "true" or
+         lexeme == "while" then
+           category = lexit.KEY
+      else
+        category = lexit.ID
+      end
+    end
+  end
        
-local function handle_DIGIT()
-  if isDigit(character) then
-    add1()
-  elseif character == "e" or character == "E" then
-    if isDigit(nextCharacter()) then
+  -- handle_DIGIT()
+  -- Determines if a lexeme is a NumericLiteral.
+  local function handle_DIGIT()
+    if isDigit(character) then
       add1()
-      add1()
-      state = EXPONENT
-    elseif nextCharacter() == "+" then
-      if isDigit(nextNextCharacter()) then
-        add1()
-        add1()
+    
+    -- Handle possible exponents  
+    elseif character == "e" or character == "E" then
+      if isDigit(nextCharacter()) then
+        add1() -- add e or E
+        add1() -- add digit
         state = EXPONENT
+      elseif nextCharacter() == "+" then
+        if isDigit(nextNextCharacter()) then
+          add1() -- add e or E
+          add1() -- add +
+          add1() -- add digit
+          state = EXPONENT
+        else
+          state = DONE
+          category = lexit.NUMLIT
+        end
       else
         state = DONE
         category = lexit.NUMLIT
       end
+    
+    -- No more digits and not an exponent
     else
       state = DONE
       category = lexit.NUMLIT
     end
-  else
-    state = DONE
-    category = lexit.NUMLIT
   end
-end
 
-local function handle_EXPONENT()
-  if isDigit(character) then
-    add1()
-    state = EXPONENT
-  else
-    state = DONE
-    category = lexit.NUMLIT
+  -- handle_EXPONENT
+  -- Determines when an exponent in a NumericLiteral ends.
+  local function handle_EXPONENT()
+    if isDigit(character) then
+      add1()
+      state = EXPONENT
+    else
+      state = DONE
+      category = lexit.NUMLIT
+    end
   end
-end
-    
-local function handle_PLUS()
-  if isDigit(character) and preferOpFlag == false then
-    add1()
-    state = DIGIT
-  else
-    state = DONE
-    category = lexit.OP
-  end
-end
-
-local function handle_MINUS()
-  if isDigit(character) and preferOpFlag == false then
-    add1()
-    state = DIGIT
-  else
-    state = DONE
-    category = lexit.OP
-  end
-end
-
-local function handle_STRING()
-  if character == stringQuote then
-    add1()
-    state = DONE
-    category = lexit.STRLIT
-  elseif character ~= "\n" and character ~= "" then
-    add1()
-    state = STRING
-  else
-    add1()
-    state = DONE
-    category = lexit.MAL
-  end
-end
-   
--- Handles =, !, <, and >
-local function handle_COMPARISON()
-  if character == "=" then
-    add1()
-  end
-  state = DONE
-  category = lexit.OP
-end
-
-local function handle_AMPERSAND()
-  if character == "&" then
-    add1()
-    state = DONE
-    category = lexit.OP 
-  else
-    state = DONE
-    category = lexit.PUNCT
-  end
-end
   
+  -- handle_PLUSMINUS
+  -- Determines if + or - is an operator or part of a NumericLiteral
+  local function handle_PLUSMINUS()
+    if isDigit(character) and preferOpFlag == false then
+      add1()
+      state = DIGIT
+    else
+      state = DONE
+      category = lexit.OP
+    end
+  end
+
+  -- handle_STRING
+  -- Determines if a lexeme is a StringLiteral
+  local function handle_STRING()
+    if character == stringQuote then
+      add1()
+      state = DONE
+      category = lexit.STRLIT
+    elseif character ~= "\n" and character ~= "" then
+      add1()
+      state = STRING
+    else
+      add1()
+      state = DONE
+      category = lexit.MAL
+    end
+  end
+  
+  -- handle_COMPARISON
+  -- Handles =, !, <, and > which are all operators but may be followed by =
+  local function handle_COMPARISON()
+    if character == "=" then
+      add1()
+    end
+    state = DONE
+    category = lexit.OP
+  end
+
+  -- handle_AMPERSAND
+  -- Checks if & is followed by & for an operator
+  local function handle_AMPERSAND()
+    if character == "&" then
+      add1()
+      state = DONE
+      category = lexit.OP 
+    else
+      state = DONE
+      category = lexit.PUNCT
+    end
+  end
+  
+  -- handle_PIPE
+  -- Checks if | is followed by | for an operator
   local function handle_PIPE()
-  if character == "|" then
-    add1()
-    state = DONE
-    category = lexit.OP 
-  else
-    state = DONE
-    category = lexit.PUNCT
+    if character == "|" then
+      add1()
+      state = DONE
+      category = lexit.OP 
+    else
+      state = DONE
+      category = lexit.PUNCT
+    end
   end
-end
 
-    -- **** Table of State-Handler Functions
-
-    handlers = {
-        [DONE]=handle_DONE,
-        [START]=handle_START,
-        [LETTER]=handle_LETTER,
-        [DIGIT]=handle_DIGIT,
-        [EXPONENT]=handle_EXPONENT,
-        [PLUS]=handle_PLUS,
-        [MINUS]=handle_MINUS,
-        [STRING]=handle_STRING,
-        [COMPARISON]=handle_COMPARISON,
-        [AMPERSAND]=handle_AMPERSAND,
-        [PIPE]=handle_PIPE
-    }
+  -- **** Table of State-Handler Functions ****
+  -- Index corresponds with the State Constants.
+  handlers = {
+      [DONE]=handle_DONE,
+      [START]=handle_START,
+      [LETTER]=handle_LETTER,
+      [DIGIT]=handle_DIGIT,
+      [EXPONENT]=handle_EXPONENT,
+      [PLUSMINUS]=handle_PLUSMINUS,
+      [STRING]=handle_STRING,
+      [COMPARISON]=handle_COMPARISON,
+      [AMPERSAND]=handle_AMPERSAND,
+      [PIPE]=handle_PIPE
+  }
   
-  -- **** Iterator Function
+  -- **** Iterator Function ****
   -- getLexeme
   -- Called each time through the for-in loop.
   -- Returns a pair: lexeme (string), category (int) or nil, nil if no more lexeme.
   local function getLexeme(dummy1, dummy2)
+    -- End of program
     if position > program:len() then
       preferOpFlag = false
       return nil, nil
     end
     
+    -- Beginning of a new lexeme
     lexeme  = ""
     state = START
     while state ~= DONE do
@@ -418,6 +430,7 @@ end
       handlers[state]()
     end
     
+    -- Finish lexeme
     skipWhitespace()
     preferOpFlag = false
     return lexeme, category
@@ -428,10 +441,9 @@ end
   position = 1
   skipWhitespace()
   return getLexeme, nil, nil
-end
+end -- End of lexit.lex
   
 -- ****
 -- Module Table Return
 -- ****
-
 return lexit
